@@ -2,17 +2,19 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:screenOrientation="landscape"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:screenOrientation="landscape"
     tools:context="com.example.kenbo.chess_gui.MainActivity">
 
     <Button
         android:id="@+id/beginNewGame"
         android:layout_width="217dp"
         android:layout_height="142dp"
+        android:layout_marginTop="72dp"
         android:onClick="newGameAction"
         android:text="Button"
-        tools:layout_editor_absoluteX="188dp"
-        tools:layout_editor_absoluteY="72dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </android.support.constraint.ConstraintLayout>

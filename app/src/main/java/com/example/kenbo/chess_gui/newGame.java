@@ -13,22 +13,23 @@ public class newGame extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
+        final TextView timer = findViewById(R.id.countdownText);
+        CountDownTimer countDownTimer;
+        countDownTimer = new CountDownTimer(30000, 1000) {
+            @Override
+            public void onTick(long l) {
+                timer.setText(String.valueOf(l/1000));
+            }
 
+            @Override
+            public void onFinish() {
+
+            }
+        }.start();
     }
 
-
-//    CountDownTimer countdown  = new CountDownTimer(30000, 10000) {
-//        @Override
-//        public void onTick(long l) {
-//        timer.setText("time:" + l);
-//        }
-//
-//        @Override
-//        public void onFinish() {
-//
-//        }
-//    };
 
 
 
 }
+    
