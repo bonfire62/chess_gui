@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">chess_gui</string>
+    <string name="app_name">Wizards\' Chess</string>
     <string name="title_activity_new_game">newGame</string>
+    <string name="game_select">Select Type:</string>
 </resources>
