@@ -13,7 +13,7 @@
         android:layout_width="217dp"
         android:layout_height="142dp"
         android:layout_marginTop="96dp"
-        android:text="@+string/Start New Game"
+        android:text="Start New Game"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -26,7 +26,7 @@
         android:layout_height="20dp"
         android:layout_marginBottom="28dp"
         android:layout_marginEnd="212dp"
-        android:text="@+string/status:"
+        android:text="status:"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

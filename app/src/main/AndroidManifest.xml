@@ -21,6 +21,10 @@
             android:label="@string/title_activity_new_game"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".AIvsAI"></activity>
+        <service
+            android:name="com.example.kenbo.chess_gui.UsbService"
+            android:enabled="true">
+        </service>
     </application>
 
 </manifest>

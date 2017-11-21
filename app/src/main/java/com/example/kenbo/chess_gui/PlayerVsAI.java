@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -18,12 +19,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
+import java.util.Set;
 
 public class PlayerVsAI extends AppCompatActivity {
-    TextView statusText;
-    TextView timer;
-    CountDownTimer countDownTimer;
-    Button endTurn;
 
     /*
      * Notifications from UsbService will be received here.
@@ -50,6 +48,10 @@ public class PlayerVsAI extends AppCompatActivity {
             }
         }
     };
+    TextView statusText;
+    TextView timer;
+    CountDownTimer countDownTimer;
+    Button endTurn;
     private UsbService usbService;
     private TextView display;
     private EditText editText;
@@ -68,10 +70,6 @@ public class PlayerVsAI extends AppCompatActivity {
         }
     };
 
-    public PlayerVsAI() {
-    }
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -79,9 +77,33 @@ public class PlayerVsAI extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
-        statusText = findViewById(R.id.statusText);
-        Button endTurn = findViewById(R.id.endTurn);
+        statusText = (TextView) findViewById(R.id.statusText);
 
+        //castle button
+        Button sendButton = (Button) findViewById(R.id.castleButton);
+        sendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (usbService != null) { // if UsbService was correctly binded, Send data
+                    //TODO replace castle with something
+                    usbService.write("castle".getBytes());
+                }
+            }
+        });
+
+        //endturn button
+        Button endTurn = (Button) findViewById(R.id.endTurn);
+        endTurn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                if(usbService != null){
+                    usbService.write("0x2".getBytes());
+                }
+                countDownTimer.cancel();
+                countDownTimer.start();
+            }
+
+        });
 
         timer = findViewById(R.id.countdownText);
 
@@ -99,29 +121,51 @@ public class PlayerVsAI extends AppCompatActivity {
         }.start();
 
 
-    }
-    protected void onStart(Bundle savedInstanceState)
-    {
-//identify buttons
-
-
 
     }
 
-    public void turnMade(View v)
-    {
-    countDownTimer.cancel();
-
-
-
-    countDownTimer.start();
-
+    @Override
+    public void onResume(){
+        super.onResume();
+        setFilters();
+        startService(UsbService.class, usbConnection, null);
     }
 
-    public void endGame()
-    {
-
+    @Override
+    public void onPause(){
+        super.onPause();
+        unregisterReceiver(mUsbReceiver);
+        unbindService(usbConnection);
     }
+
+    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
+        if (!UsbService.SERVICE_CONNECTED) {
+            Intent startService = new Intent(this, service);
+            if (extras != null && !extras.isEmpty()) {
+                Set<String> keys = extras.keySet();
+                for (String key : keys) {
+                    String extra = extras.getString(key);
+                    startService.putExtra(key, extra);
+                }
+            }
+            startService(startService);
+        }
+        Intent bindingIntent = new Intent(this, service);
+        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+
+    private void setFilters() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
+        filter.addAction(UsbService.ACTION_NO_USB);
+        filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
+        filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
+        registerReceiver(mUsbReceiver, filter);
+    }
+
+
 
     /*
    * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
