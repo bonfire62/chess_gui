@@ -14,11 +14,8 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.felhr.usbserial.usbserial.SerialBuffer;
 
 import java.lang.ref.WeakReference;
 import java.util.Set;
@@ -28,6 +25,14 @@ public class PlayerVsAI extends AppCompatActivity {
     /*
      * Notifications from UsbService will be received here.
      */
+    /*TODO
+    uart commands to implement
+    0x1 start new game (params: player_type=<human|ai>)
+    0x2 end turn (flag for piece promotion) (add checkbox) with popup
+    0x6 end game
+    0xA end capture/castle
+    add logic to capture log 9_foobar
+    */
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -75,10 +80,19 @@ public class PlayerVsAI extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        getWindow().getDecorView().setSystemUiVisibility(          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE);
         mHandler = new MyHandler(this);
 
+        //serial for create game
+        usbService.write("0x1".getBytes());
+
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_new_game);
+        setContentView(R.layout.activity_pai);
         display = findViewById(R.id.statusText);
 
         //castle button
@@ -127,6 +141,12 @@ public class PlayerVsAI extends AppCompatActivity {
     @Override
     public void onResume(){
         super.onResume();
+        getWindow().getDecorView().setSystemUiVisibility(          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE);
         setFilters();
         startService(UsbService.class, usbConnection, null);
     }

@@ -7,4 +7,5 @@
     <string name="status">status</string>
     <string name="castle">Castle</string>
     <string name="end_game">End Game</string>
+    <string name="capture">Capturing Piece?</string>
 </resources>
