@@ -2,4 +2,9 @@
     <string name="app_name">Wizards\' Chess</string>
     <string name="title_activity_new_game">newGame</string>
     <string name="game_select">Select Type:</string>
+    <string name="submit_turn">Submit Turn</string>
+    <string name="test">test</string>
+    <string name="status">status</string>
+    <string name="castle">Castle</string>
+    <string name="end_game">End Game</string>
 </resources>

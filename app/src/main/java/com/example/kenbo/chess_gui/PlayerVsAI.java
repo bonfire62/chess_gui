@@ -18,6 +18,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.felhr.usbserial.usbserial.SerialBuffer;
+
 import java.lang.ref.WeakReference;
 import java.util.Set;
 
@@ -48,14 +50,14 @@ public class PlayerVsAI extends AppCompatActivity {
             }
         }
     };
-    TextView statusText;
     TextView timer;
     CountDownTimer countDownTimer;
     Button endTurn;
     private UsbService usbService;
     private TextView display;
-    private EditText editText;
     private MyHandler mHandler;
+    private String serialOut;
+    private StringBuilder serialBuffer = new StringBuilder();
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
@@ -77,10 +79,10 @@ public class PlayerVsAI extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
-        statusText = (TextView) findViewById(R.id.statusText);
+        display = findViewById(R.id.statusText);
 
         //castle button
-        Button sendButton = (Button) findViewById(R.id.castleButton);
+        Button sendButton = findViewById(R.id.castleButton);
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -92,12 +94,12 @@ public class PlayerVsAI extends AppCompatActivity {
         });
 
         //endturn button
-        Button endTurn = (Button) findViewById(R.id.endTurn);
+        Button endTurn = findViewById(R.id.endTurn);
         endTurn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
                 if(usbService != null){
-                    usbService.write("0x2".getBytes());
+                    usbService.write("0x2\n\r".getBytes());
                 }
                 countDownTimer.cancel();
                 countDownTimer.start();
@@ -119,8 +121,6 @@ public class PlayerVsAI extends AppCompatActivity {
                 timer.setText("Turn Over!");
             }
         }.start();
-
-
 
     }
 
@@ -165,8 +165,6 @@ public class PlayerVsAI extends AppCompatActivity {
         registerReceiver(mUsbReceiver, filter);
     }
 
-
-
     /*
    * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
    */
@@ -177,12 +175,20 @@ public class PlayerVsAI extends AppCompatActivity {
             mActivity = new WeakReference<>(activity);
         }
 
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
                     String data = (String) msg.obj;
-                    mActivity.get().display.append(data);
+                        mActivity.get().serialBuffer.append(data);
+                        //checks for return carraige in serial data
+                        if(data.contains("\r"))
+                        {
+                            mActivity.get().display.setText(mActivity.get().serialBuffer.toString());
+                            mActivity.get().serialBuffer.setLength(0);
+
+                        }
                     break;
                 case UsbService.CTS_CHANGE:
                     Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
