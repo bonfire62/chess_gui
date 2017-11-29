@@ -46,14 +46,14 @@ public class MainActivity extends AppCompatActivity {
 
                         {
                             Intent pVAiIntent = new Intent(MainActivity.this, PlayerVsAI.class);
-                            pVAiIntent.putExtra("GAME_TYPE", "PAI");
+                            //pVAiIntent.putExtra("GAME_TYPE", "PAI");
                             startActivity(pVAiIntent);
 
                         }
                         else
                         {
                             Intent aiVAiIntent = new Intent(MainActivity.this, AIvsAI.class);
-                            aiVAiIntent.putExtra("GAME_TYPE", "AIAI");
+                           // aiVAiIntent.putExtra("GAME_TYPE", "AIAI");
                             startActivity(aiVAiIntent);
                         }
 
@@ -69,12 +69,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
 protected void OnResume(Bundle savedInstanceState){
-    getWindow().getDecorView().setSystemUiVisibility(          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_IMMERSIVE);
+//    getWindow().getDecorView().setSystemUiVisibility(          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+//            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//            | View.SYSTEM_UI_FLAG_FULLSCREEN
+//            | View.SYSTEM_UI_FLAG_IMMERSIVE);
 }
 
 

@@ -3,15 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://C:\Users\kenbo\chess_test\chess_gui\app\app.iml" filepath="C:\Users\kenbo\chess_test\chess_gui\app\app.iml" />
       <module fileurl="file://$PROJECT_DIR$/chess_gui.iml" filepath="$PROJECT_DIR$/chess_gui.iml" />
-      <module fileurl="file://C:\Users\kenbo\chess_test\chess_gui\chess_gui.iml" filepath="C:\Users\kenbo\chess_test\chess_gui\chess_gui.iml" />
       <module fileurl="file://$PROJECT_DIR$/example/example.iml" filepath="$PROJECT_DIR$/example/example.iml" />
-      <module fileurl="file://C:\Users\kenbo\chess_test\chess_gui\example\example.iml" filepath="C:\Users\kenbo\chess_test\chess_gui\example\example.iml" />
       <module fileurl="file://$PROJECT_DIR$/examplesync/examplesync.iml" filepath="$PROJECT_DIR$/examplesync/examplesync.iml" />
-      <module fileurl="file://C:\Users\kenbo\chess_test\chess_gui\examplesync\examplesync.iml" filepath="C:\Users\kenbo\chess_test\chess_gui\examplesync\examplesync.iml" />
       <module fileurl="file://$PROJECT_DIR$/usbserial/usbserial.iml" filepath="$PROJECT_DIR$/usbserial/usbserial.iml" />
-      <module fileurl="file://C:\Users\kenbo\chess_test\chess_gui\usbserial\usbserial.iml" filepath="C:\Users\kenbo\chess_test\chess_gui\usbserial\usbserial.iml" />
     </modules>
   </component>
 </project>

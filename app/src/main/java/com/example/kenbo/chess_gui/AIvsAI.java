@@ -89,7 +89,7 @@ public class AIvsAI extends AppCompatActivity {
 
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_pai);
+        setContentView(R.layout.activity_aiai);
         display = findViewById(R.id.statusText);
 
         //castle button
