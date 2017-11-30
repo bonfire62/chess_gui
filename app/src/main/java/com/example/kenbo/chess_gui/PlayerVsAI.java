@@ -66,9 +66,10 @@ public class PlayerVsAI extends AppCompatActivity {
     private String serialOut;
     private StringBuilder serialBuffer = new StringBuilder();
     private StringBuilder logBuffer = new StringBuilder();
-    private CheckBox capture;
-
-
+    private CheckBox promoCheckbox;
+    private CheckBox castlingCheckbox;
+    private CheckBox captureCheckbox;
+    private CheckBox enPassCheckbox;
 
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
@@ -102,10 +103,16 @@ public class PlayerVsAI extends AppCompatActivity {
         //find ui elements
         display = findViewById(R.id.statusText);
         Button endTurn = findViewById(R.id.endTurn);
-        Button sendButton = findViewById(R.id.castleButton);
         Button endGame = findViewById(R.id.endGameButton);
         Button log = findViewById(R.id.logButton);
+        captureCheckbox = findViewById(R.id.checkBox);
+        castlingCheckbox = findViewById(R.id.castlingCheckbox);
+        promoCheckbox = findViewById(R.id.promoCheckbox);
+        enPassCheckbox = findViewById(R.id.enPassCheckbox);
 
+        captureCheckbox.setChecked(false);
+        castlingCheckbox.setChecked(false);
+        promoCheckbox.setChecked(false);
 
         AlertDialog logDisplay = new AlertDialog.Builder(PlayerVsAI.this).create();
         logDisplay.setTitle("Log:");
@@ -114,26 +121,42 @@ public class PlayerVsAI extends AppCompatActivity {
 
         //TODO add action listener for log button
 
-        //castle button
-        sendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (usbService != null) { // if UsbService was correctly binded, Send data
-                    //TODO replace castle with something
-                    usbService.write("castle".getBytes());
-                }
-            }
-        });
 
         //endturn button
         endTurn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
                 if(usbService != null){
-                    usbService.write("0x2\n\r".getBytes());
+                    //resets on single capture
+                        //capture
+                        if(captureCheckbox.isChecked()) {
+                            if(promoCheckbox.isChecked()) {
+                                usbService.write("0xA cp".getBytes());
+                            }
+                            else{
+                                usbService.write("0xA c".getBytes());
+                                clearCheckboxes();
+                            }
+                        }
+                        //castling
+                        else if(castlingCheckbox.isChecked()) {
+                            usbService.write("0xA k".getBytes());
+                            clearCheckboxes();
+                        }
+                        //promotion
+                        else if(promoCheckbox.isChecked()) {
+                            usbService.write("0xA p".getBytes());
+                            clearCheckboxes();
+                        }
+                        //en passant capture
+                        else if(enPassCheckbox.isChecked()){
+                            usbService.write("0xA e".getBytes());
+                        }
+
                 }
+//              clearCheckboxes();
                 countDownTimer.cancel();
-                countDownTimer.start();
+
             }
 
         });
@@ -163,6 +186,13 @@ public class PlayerVsAI extends AppCompatActivity {
                 timer.setText("Turn Over!");
             }
         }.start();
+
+    }
+
+    public void clearCheckboxes(){
+        promoCheckbox.setChecked(false);
+        castlingCheckbox.setChecked(false);
+        captureCheckbox.setChecked(false);
 
     }
 
@@ -237,8 +267,6 @@ public class PlayerVsAI extends AppCompatActivity {
                             mActivity.get().display.setText(mActivity.get().serialBuffer.toString());
                             photonResponse(mActivity.get().toString());
                             mActivity.get().serialBuffer.setLength(0);
-
-
                         }
                     break;
                 case UsbService.CTS_CHANGE:
@@ -253,7 +281,8 @@ public class PlayerVsAI extends AppCompatActivity {
         {
             //TODO photon responses needed 1. AI turn complete 2. game over 3. move invalid
             switch (s) {
-                case(""):
+                case("0x4"):
+                    mActivity.get().countDownTimer.start();
             }
         }
     }

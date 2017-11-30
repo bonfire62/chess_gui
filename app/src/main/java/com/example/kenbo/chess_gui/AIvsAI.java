@@ -92,17 +92,7 @@ public class AIvsAI extends AppCompatActivity {
         setContentView(R.layout.activity_aiai);
         display = findViewById(R.id.statusText);
 
-        //castle button
-        Button sendButton = findViewById(R.id.castleButton);
-        sendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (usbService != null) { // if UsbService was correctly binded, Send data
-                    //TODO replace castle with something
-                    usbService.write("castle".getBytes());
-                }
-            }
-        });
+
 
         //endturn button
         Button endTurn = findViewById(R.id.endTurn);
