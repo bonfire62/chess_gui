@@ -11,9 +11,11 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,6 +65,11 @@ public class PlayerVsAI extends AppCompatActivity {
     private MyHandler mHandler;
     private String serialOut;
     private StringBuilder serialBuffer = new StringBuilder();
+    private StringBuilder logBuffer = new StringBuilder();
+    private CheckBox capture;
+
+
+
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
@@ -92,10 +99,22 @@ public class PlayerVsAI extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pai);
+        //find ui elements
         display = findViewById(R.id.statusText);
+        Button endTurn = findViewById(R.id.endTurn);
+        Button sendButton = findViewById(R.id.castleButton);
+        Button endGame = findViewById(R.id.endGameButton);
+        Button log = findViewById(R.id.logButton);
+
+
+        AlertDialog logDisplay = new AlertDialog.Builder(PlayerVsAI.this).create();
+        logDisplay.setTitle("Log:");
+        logDisplay.getButton(R.id.logButton);
+
+
+        //TODO add action listener for log button
 
         //castle button
-        Button sendButton = findViewById(R.id.castleButton);
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -107,7 +126,6 @@ public class PlayerVsAI extends AppCompatActivity {
         });
 
         //endturn button
-        Button endTurn = findViewById(R.id.endTurn);
         endTurn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
@@ -118,6 +136,17 @@ public class PlayerVsAI extends AppCompatActivity {
                 countDownTimer.start();
             }
 
+        });
+
+        //endGameButton
+        endGame.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                if(usbService != null){
+                    usbService.write("0x6\n\r".getBytes());
+                    finish();
+                }
+            }
         });
 
         timer = findViewById(R.id.countdownText);
@@ -184,6 +213,7 @@ public class PlayerVsAI extends AppCompatActivity {
         registerReceiver(mUsbReceiver, filter);
     }
 
+
     /*
    * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
    */
@@ -205,7 +235,9 @@ public class PlayerVsAI extends AppCompatActivity {
                         if(data.contains("\r"))
                         {
                             mActivity.get().display.setText(mActivity.get().serialBuffer.toString());
+                            photonResponse(mActivity.get().toString());
                             mActivity.get().serialBuffer.setLength(0);
+
 
                         }
                     break;
@@ -215,6 +247,13 @@ public class PlayerVsAI extends AppCompatActivity {
                 case UsbService.DSR_CHANGE:
                     Toast.makeText(mActivity.get(), "DSR_CHANGE",Toast.LENGTH_LONG).show();
                     break;
+            }
+        }
+        public void photonResponse(String s)
+        {
+            //TODO photon responses needed 1. AI turn complete 2. game over 3. move invalid
+            switch (s) {
+                case(""):
             }
         }
     }

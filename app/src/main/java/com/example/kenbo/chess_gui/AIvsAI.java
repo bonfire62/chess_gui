@@ -110,6 +110,7 @@ public class AIvsAI extends AppCompatActivity {
             @Override
             public void onClick(View v){
                 if(usbService != null){
+                    //send end turn to photon
                     usbService.write("0x2\n\r".getBytes());
                 }
                 countDownTimer.cancel();
@@ -117,6 +118,7 @@ public class AIvsAI extends AppCompatActivity {
             }
 
         });
+
 
         timer = findViewById(R.id.countdownText);
 

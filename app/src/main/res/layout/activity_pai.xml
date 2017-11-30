@@ -22,7 +22,9 @@ android:layout_width="match_parent"
 
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_pai" />
+    <include
+        android:id="@+id/endGame"
+        layout="@layout/content_pai" />
 
 
 </android.support.design.widget.CoordinatorLayout>
