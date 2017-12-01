@@ -61,7 +61,7 @@ public class PlayerVsAI extends AppCompatActivity {
     CountDownTimer countDownTimer;
     Button endTurn;
     private UsbService usbService;
-    private TextView display;
+    private TextView statusTextview;
     private MyHandler mHandler;
     private String serialOut;
     private StringBuilder serialBuffer = new StringBuilder();
@@ -101,7 +101,7 @@ public class PlayerVsAI extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pai);
         //find ui elements
-        display = findViewById(R.id.statusText);
+        statusTextview = findViewById(R.id.statusText);
         Button endTurn = findViewById(R.id.endTurn);
         Button endGame = findViewById(R.id.endGameButton);
         Button log = findViewById(R.id.logButton);
@@ -156,6 +156,9 @@ public class PlayerVsAI extends AppCompatActivity {
                 }
 //              clearCheckboxes();
                 countDownTimer.cancel();
+                statusTextview.setText("Turn submitted! Waiting for Opponent...");
+
+
 
             }
 
@@ -264,7 +267,7 @@ public class PlayerVsAI extends AppCompatActivity {
                         //checks for return carraige in serial data
                         if(data.contains("\r"))
                         {
-                            mActivity.get().display.setText(mActivity.get().serialBuffer.toString());
+                            mActivity.get().statusTextview.setText(mActivity.get().serialBuffer.toString());
                             photonResponse(mActivity.get().toString());
                             mActivity.get().serialBuffer.setLength(0);
                         }
@@ -281,8 +284,13 @@ public class PlayerVsAI extends AppCompatActivity {
         {
             //TODO photon responses needed 1. AI turn complete 2. game over 3. move invalid
             switch (s) {
+                //player turn return
                 case("0x4"):
+                    mActivity.get().statusTextview.setText("Turn Received. Your move!");
                     mActivity.get().countDownTimer.start();
+
+                default:
+                    mActivity.get().logBuffer.append(s + "\n");
             }
         }
     }
