@@ -43,7 +43,6 @@
         android:layout_width="509dp"
         android:layout_height="87dp"
         android:layout_marginBottom="196dp"
-        android:text="@string/test"
         android:textAlignment="center"
         android:textSize="70sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -76,17 +75,6 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toEndOf="@+id/statusLabel" />
 
-    <CheckBox
-        android:id="@+id/checkBox"
-        android:layout_width="170dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="28dp"
-        android:text="@string/capture"
-        app:layout_constraintHorizontal_bias="0.499"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/countdownText" />
-
     <Button
         android:id="@+id/logButton"
         android:layout_width="wrap_content"
@@ -97,36 +85,46 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <CheckBox
-        android:id="@+id/castlingCheckbox"
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="72dp"
+        android:layout_height="43dp"
+        android:layout_marginBottom="240dp"
+        android:text="Start!"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.026"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <Button
+        android:id="@+id/castleButton"
         android:layout_width="170dp"
-        android:layout_height="30dp"
-        android:text="Castlling?"
+        android:layout_height="50dp"
+        android:text="Castle"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHorizontal_bias="0.499"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/checkBox" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.809" />
 
     <CheckBox
-        android:id="@+id/promoCheckbox"
-        android:layout_width="170dp"
-        android:layout_height="30dp"
-        android:text="Promotion?"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/castlingCheckbox" />
+        android:id="@+id/checkBox"
+        android:layout_width="154dp"
+        android:layout_height="wrap_content"
+        android:text="No capture/Specials?"
+        android:textSize="12sp"
+        tools:layout_editor_absoluteX="76dp"
+        tools:layout_editor_absoluteY="150dp" />
 
-    <CheckBox
-        android:id="@+id/enPassCheckbox"
+    <Button
+        android:id="@+id/captureButton"
         android:layout_width="170dp"
-        android:layout_height="30dp"
-        android:text="En Passant?"
+        android:layout_height="50dp"
+        android:text="Capture"
         app:layout_constraintHorizontal_bias="0.499"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/promoCheckbox" />
+        tools:layout_editor_absoluteY="182dp" />
 
 </android.support.constraint.ConstraintLayout>

@@ -1,8 +1,11 @@
 package com.example.kenbo.chess_gui;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -59,19 +62,31 @@ public class PlayerVsAI extends AppCompatActivity {
     };
     TextView timer;
     CountDownTimer countDownTimer;
-    Button endTurn;
+
+
     private UsbService usbService;
     private TextView statusTextview;
     private MyHandler mHandler;
     private String serialOut;
     private StringBuilder serialBuffer = new StringBuilder();
     private StringBuilder logBuffer = new StringBuilder();
-    private CheckBox promoCheckbox;
-    private CheckBox castlingCheckbox;
-    private CheckBox captureCheckbox;
-    private CheckBox enPassCheckbox;
+    Button endTurnButton;
+    Button endGameButton;
+
+/*
+
+both capture and castle, add a button to say that first step is done (serial send)
+capture-
+remove opponent piece done ->
+(send serial) A c\n
+(wait for serial)0 0
+move your piece
+send serial 2\n
+wait for serial 0 0
+(boolean flags for both)
 
 
+ */
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
@@ -102,62 +117,67 @@ public class PlayerVsAI extends AppCompatActivity {
         setContentView(R.layout.activity_pai);
         //find ui elements
         statusTextview = findViewById(R.id.statusText);
-        Button endTurn = findViewById(R.id.endTurn);
-        Button endGame = findViewById(R.id.endGameButton);
-        Button log = findViewById(R.id.logButton);
-        captureCheckbox = findViewById(R.id.checkBox);
-        castlingCheckbox = findViewById(R.id.castlingCheckbox);
-        promoCheckbox = findViewById(R.id.promoCheckbox);
-        enPassCheckbox = findViewById(R.id.enPassCheckbox);
+        timer = findViewById(R.id.countdownText);
 
-        captureCheckbox.setChecked(false);
-        castlingCheckbox.setChecked(false);
-        promoCheckbox.setChecked(false);
+        endTurnButton = findViewById(R.id.endTurn);
+        endGameButton = findViewById(R.id.endGameButton);
+        final Button logButton = findViewById(R.id.logButton);
+        final Button captureButton = findViewById(R.id.captureButton);
+        final Button castleButton = findViewById(R.id.castleButton);
 
-        AlertDialog logDisplay = new AlertDialog.Builder(PlayerVsAI.this).create();
-        logDisplay.setTitle("Log:");
-        logDisplay.getButton(R.id.logButton);
+        final Button startGameButton = findViewById(R.id.startButton);
+
+        endTurnButton.setEnabled(false);
+        endGameButton.setEnabled(false);
+        //begin game
+        startGameButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                countDownTimer.start();
+                startGameButton.setVisibility(View.GONE);
+
+                if (usbService != null) {
+                    usbService.write("0x1 p\n".getBytes());
+                }
+                endGameButton.setEnabled(true);
+                endTurnButton.setEnabled(true);
+                //setGui(true);
+
+            }
+        });
 
 
         //TODO add action listener for log button
+        //log button
+        logButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final AlertDialog logDialog = new AlertDialog.Builder(PlayerVsAI.this).create();
+                logDialog.setMessage(logBuffer.toString());
+                logDialog.setTitle("Log");
+                logDialog.setButton(Dialog.BUTTON_POSITIVE, "Hide", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        logDialog.hide();
+                    }
+                });
+
+                logDialog.show();
+
+            }
+        });
 
 
         //endturn button
-        endTurn.setOnClickListener(new View.OnClickListener(){
+        endTurnButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
-                if(usbService != null){
-                    //resets on single capture
-                        //capture
-                        if(captureCheckbox.isChecked()) {
-                            if(promoCheckbox.isChecked()) {
-                                usbService.write("0xA cp".getBytes());
-                            }
-                            else{
-                                usbService.write("0xA c".getBytes());
-                                clearCheckboxes();
-                            }
-                        }
-                        //castling
-                        else if(castlingCheckbox.isChecked()) {
-                            usbService.write("0xA k".getBytes());
-                            clearCheckboxes();
-                        }
-                        //promotion
-                        else if(promoCheckbox.isChecked()) {
-                            usbService.write("0xA p".getBytes());
-                            clearCheckboxes();
-                        }
-                        //en passant capture
-                        else if(enPassCheckbox.isChecked()){
-                            usbService.write("0xA e".getBytes());
-                        }
-
+            public void onClick(View v) {
+                if (usbService != null) {
+                    usbService.write("2".getBytes());
                 }
-//              clearCheckboxes();
                 countDownTimer.cancel();
                 statusTextview.setText("Turn submitted! Waiting for Opponent...");
-
+                endGameButton.setEnabled(false);
+                endTurnButton.setEnabled(false);
 
 
             }
@@ -165,17 +185,37 @@ public class PlayerVsAI extends AppCompatActivity {
         });
 
         //endGameButton
-        endGame.setOnClickListener(new View.OnClickListener(){
+        endGameButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
-                if(usbService != null){
+            public void onClick(View v) {
+                if (usbService != null) {
                     usbService.write("0x6\n\r".getBytes());
                     finish();
                 }
             }
         });
 
-        timer = findViewById(R.id.countdownText);
+        //castlingButton
+        castleButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final AlertDialog castleDialog = new AlertDialog.Builder(PlayerVsAI.this).create();
+                castleDialog.setMessage("Move king, then press next");
+                castleDialog.setTitle("Log");
+                castleDialog.setButton(castleDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        usbService.write("A c\n".getBytes());
+                        castleDialog.hide();
+                        showcastleDialog();
+
+                    }
+
+                });
+                castleDialog.show();
+            }
+
+        });
+
 
         //conter begin
         countDownTimer = new CountDownTimer(30000, 1000) {
@@ -188,30 +228,37 @@ public class PlayerVsAI extends AppCompatActivity {
             public void onFinish() {
                 timer.setText("Turn Over!");
             }
-        }.start();
+        };
+
+
 
     }
 
-    public void clearCheckboxes(){
-        promoCheckbox.setChecked(false);
-        castlingCheckbox.setChecked(false);
-        captureCheckbox.setChecked(false);
-
+    public void showcastleDialog(){
+        final AlertDialog castleDialog2 = new AlertDialog.Builder(PlayerVsAI.this).create();
+        castleDialog2.setMessage("test");
+        castleDialog2.setButton(castleDialog2.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+            castleDialog2.hide();
+            final Button endTurnButton = findViewById(R.id.endTurn);
+            final Button endGameButton = findViewById(R.id.endGameButton);
+            endTurnButton.setEnabled(true);
+            endGameButton.setEnabled(true);
+            }
+        });
+        castleDialog2.show();
     }
+
+
+
 
     @Override
-    public void onResume(){
+    public void onResume() {
         super.onResume();
-//        getWindow().getDecorView().setSystemUiVisibility(          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-//                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-//                | View.SYSTEM_UI_FLAG_FULLSCREEN
-//                | View.SYSTEM_UI_FLAG_IMMERSIVE);
-        setFilters();
-        startService(UsbService.class, usbConnection, null);
+        setFilters();  // Start listening notifications from UsbService
+        startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
     }
-
     @Override
     public void onPause(){
         super.onPause();
@@ -247,6 +294,7 @@ public class PlayerVsAI extends AppCompatActivity {
     }
 
 
+
     /*
    * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
    */
@@ -268,7 +316,7 @@ public class PlayerVsAI extends AppCompatActivity {
                         if(data.contains("\r"))
                         {
                             mActivity.get().statusTextview.setText(mActivity.get().serialBuffer.toString());
-                            photonResponse(mActivity.get().toString());
+//                            photonResponse(mActivity.get().toString());
                             mActivity.get().serialBuffer.setLength(0);
                         }
                     break;
@@ -283,15 +331,22 @@ public class PlayerVsAI extends AppCompatActivity {
         public void photonResponse(String s)
         {
             //TODO photon responses needed 1. AI turn complete 2. game over 3. move invalid
-            switch (s) {
-                //player turn return
-                case("0x4"):
-                    mActivity.get().statusTextview.setText("Turn Received. Your move!");
-                    mActivity.get().countDownTimer.start();
+            String[] split = s.split(" ");
+            //player turn return
+            if(Integer.getInteger(split[0]) > 15) {
 
-                default:
-                    mActivity.get().logBuffer.append(s + "\n");
+                mActivity.get().logBuffer.append(s + "\n");
             }
+
+            else
+                switch (split[0]) {
+                    case("0x4"):
+                        mActivity.get().statusTextview.setText("Turn Received. Your move!") ;
+                        mActivity.get().endGameButton.setEnabled(true);
+                        mActivity.get().countDownTimer.start();
+
+                }
+
         }
     }
 

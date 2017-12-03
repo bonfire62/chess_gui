@@ -1,8 +1,10 @@
 package com.example.kenbo.chess_gui;
 
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -11,6 +13,7 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -58,11 +61,15 @@ public class AIvsAI extends AppCompatActivity {
     TextView timer;
     CountDownTimer countDownTimer;
     Button endTurn;
+    Button logButton;
+    Button endGameButton;
+
     private UsbService usbService;
-    private TextView display;
+    private TextView statusTextView;
     private MyHandler mHandler;
     private String serialOut;
     private StringBuilder serialBuffer = new StringBuilder();
+    private StringBuilder logBuffer = new StringBuilder();
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
@@ -90,7 +97,7 @@ public class AIvsAI extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_aiai);
-        display = findViewById(R.id.statusText);
+        statusTextView = findViewById(R.id.statusText);
 
 
 
@@ -101,12 +108,29 @@ public class AIvsAI extends AppCompatActivity {
             public void onClick(View v){
                 if(usbService != null){
                     //send end turn to photon
-                    usbService.write("0x2\n\r".getBytes());
+                    usbService.write("0x1 a|a\n\r".getBytes());
                 }
                 countDownTimer.cancel();
                 countDownTimer.start();
             }
 
+        });
+        //log button
+        logButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                final AlertDialog logDialog = new AlertDialog.Builder(AIvsAI.this).create();
+                logDialog.setMessage(logBuffer.toString());
+                logDialog.setTitle("Log");
+                logDialog.setButton(Dialog.BUTTON_POSITIVE, "Hide", new DialogInterface.OnClickListener(){
+                    public void onClick(DialogInterface dialog, int which){
+                        logDialog.hide();
+                    }
+                });
+
+                logDialog.show();
+
+            }
         });
 
 
@@ -194,7 +218,7 @@ public class AIvsAI extends AppCompatActivity {
                     //checks for return carraige in serial data
                     if(data.contains("\r"))
                     {
-                        mActivity.get().display.setText(mActivity.get().serialBuffer.toString());
+                        mActivity.get().statusTextView.setText(mActivity.get().serialBuffer.toString());
                         mActivity.get().serialBuffer.setLength(0);
 
                     }
@@ -206,6 +230,26 @@ public class AIvsAI extends AppCompatActivity {
                     Toast.makeText(mActivity.get(), "DSR_CHANGE",Toast.LENGTH_LONG).show();
                     break;
             }
+        }
+        public void photonResponse(String s)
+        {
+            //TODO photon responses needed 1. AI turn complete 2. game over 3. move invalid
+            String[] split = s.split(" ");
+                //player turn return
+            if(Integer.getInteger(split[0]) > 15) {
+
+                mActivity.get().logBuffer.append(s + "\n");
+            }
+
+            else
+                switch (split[0]) {
+                    case("0x4"):
+                        mActivity.get().statusTextView.setText("Turn Received. Your move!") ;
+                        mActivity.get().endGameButton.setEnabled(true);
+                        mActivity.get().countDownTimer.start();
+
+                }
+
         }
     }
 
