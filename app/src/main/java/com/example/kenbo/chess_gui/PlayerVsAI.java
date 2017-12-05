@@ -72,6 +72,8 @@ public class PlayerVsAI extends AppCompatActivity {
     private StringBuilder logBuffer = new StringBuilder();
     Button endTurnButton;
     Button endGameButton;
+    Button castleButton;
+    Button captureButton;
 
 /*
 
@@ -122,13 +124,16 @@ wait for serial 0 0
         endTurnButton = findViewById(R.id.endTurn);
         endGameButton = findViewById(R.id.endGameButton);
         final Button logButton = findViewById(R.id.logButton);
-        final Button captureButton = findViewById(R.id.captureButton);
-        final Button castleButton = findViewById(R.id.castleButton);
+        captureButton = findViewById(R.id.captureButton);
+        castleButton = findViewById(R.id.castleButton);
 
         final Button startGameButton = findViewById(R.id.startButton);
 
         endTurnButton.setEnabled(false);
         endGameButton.setEnabled(false);
+        castleButton.setEnabled(false);
+        captureButton.setEnabled(false);
+
         //begin game
         startGameButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -141,6 +146,8 @@ wait for serial 0 0
                 }
                 endGameButton.setEnabled(true);
                 endTurnButton.setEnabled(true);
+                castleButton.setEnabled(true);
+                captureButton.setEnabled(true);
                 //setGui(true);
 
             }
@@ -178,6 +185,8 @@ wait for serial 0 0
                 statusTextview.setText("Turn submitted! Waiting for Opponent...");
                 endGameButton.setEnabled(false);
                 endTurnButton.setEnabled(false);
+                captureButton.setEnabled(true);
+                castleButton.setEnabled(true);
 
 
             }
@@ -201,7 +210,6 @@ wait for serial 0 0
             public void onClick(View view) {
                 final AlertDialog castleDialog = new AlertDialog.Builder(PlayerVsAI.this).create();
                 castleDialog.setMessage("Move king, then press next");
-                castleDialog.setTitle("Log");
                 castleDialog.setButton(castleDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         usbService.write("A c\n".getBytes());
@@ -214,6 +222,20 @@ wait for serial 0 0
                 castleDialog.show();
             }
 
+        });
+
+        captureButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                final AlertDialog captureDialog = new AlertDialog.Builder(PlayerVsAI.this).create();
+                captureDialog.setMessage("Remove Opponent Piece, then press next");
+                captureDialog.setButton(captureDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        usbService.write("A c".getBytes());
+                    }
+                });
+            }
         });
 
 
@@ -236,7 +258,7 @@ wait for serial 0 0
 
     public void showcastleDialog(){
         final AlertDialog castleDialog2 = new AlertDialog.Builder(PlayerVsAI.this).create();
-        castleDialog2.setMessage("test");
+        castleDialog2.setMessage("Now move Rook, and touch Submit Turn");
         castleDialog2.setButton(castleDialog2.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
@@ -249,8 +271,6 @@ wait for serial 0 0
         });
         castleDialog2.show();
     }
-
-
 
 
     @Override
@@ -334,7 +354,6 @@ wait for serial 0 0
             String[] split = s.split(" ");
             //player turn return
             if(Integer.getInteger(split[0]) > 15) {
-
                 mActivity.get().logBuffer.append(s + "\n");
             }
 
