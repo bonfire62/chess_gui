@@ -32,11 +32,8 @@ public class PlayerVsAI extends AppCompatActivity {
      */
     /*TODO
     uart commands to implement
-    0x1 start new game (params: player_type=<human|ai>)
-    0x2 end turn (flag for piece promotion) (add checkbox) with popup
-    0x6 end game
-    0xA end capture/castle
-    add logic to capture log 9_foobar
+    Add button and parsing to view current board state grid
+
     */
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
@@ -68,8 +65,8 @@ public class PlayerVsAI extends AppCompatActivity {
     private TextView statusTextview;
     private MyHandler mHandler;
     private String serialOut;
-    private StringBuilder serialBuffer = new StringBuilder();
-    private StringBuilder logBuffer = new StringBuilder();
+    public StringBuilder serialBuffer = new StringBuilder();
+    public StringBuilder logBuffer = new StringBuilder();
     Button endTurnButton;
     Button endGameButton;
     Button castleButton;
@@ -142,7 +139,7 @@ wait for serial 0 0
                 startGameButton.setVisibility(View.GONE);
 
                 if (usbService != null) {
-                    usbService.write("0x1 p\n".getBytes());
+                    usbService.write("1 h\n\r".getBytes());
                 }
                 endGameButton.setEnabled(true);
                 endTurnButton.setEnabled(true);
@@ -179,7 +176,7 @@ wait for serial 0 0
             @Override
             public void onClick(View v) {
                 if (usbService != null) {
-                    usbService.write("2".getBytes());
+                    usbService.write("2\n\r".getBytes());
                 }
                 countDownTimer.cancel();
                 statusTextview.setText("Turn submitted! Waiting for Opponent...");
@@ -187,6 +184,7 @@ wait for serial 0 0
                 endTurnButton.setEnabled(false);
                 captureButton.setEnabled(true);
                 castleButton.setEnabled(true);
+                timer.setText("");
 
 
             }
@@ -198,9 +196,10 @@ wait for serial 0 0
             @Override
             public void onClick(View v) {
                 if (usbService != null) {
-                    usbService.write("0x6\n\r".getBytes());
+                    usbService.write("6\n\r".getBytes());
                     finish();
                 }
+                //TODO write dialog for end game to reset pieces
             }
         });
 
@@ -212,7 +211,7 @@ wait for serial 0 0
                 castleDialog.setMessage("Move king, then press next");
                 castleDialog.setButton(castleDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        usbService.write("A c\n".getBytes());
+                        usbService.write("A k\n\r".getBytes());
                         castleDialog.hide();
                         showcastleDialog();
 
@@ -228,13 +227,15 @@ wait for serial 0 0
             @Override
             public void onClick(View view) {
                 final AlertDialog captureDialog = new AlertDialog.Builder(PlayerVsAI.this).create();
-                captureDialog.setMessage("Remove Opponent Piece, then press next");
+                captureDialog.setMessage("Remove Opponent Piece, then press Next, then End Turn");
                 captureDialog.setButton(captureDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        usbService.write("A c".getBytes());
+                        usbService.write("A c\n\r".getBytes());
+                        //TODO write showcastleDialog
                     }
                 });
+                captureDialog.show();
             }
         });
 
@@ -249,6 +250,10 @@ wait for serial 0 0
             @Override
             public void onFinish() {
                 timer.setText("Turn Over!");
+                endTurnButton.setEnabled(false);
+                endGameButton.setEnabled(false);
+                usbService.write("6\r\n".getBytes());
+                statusTextview.setText("Game Over! Press the back button");
             }
         };
 
@@ -315,6 +320,8 @@ wait for serial 0 0
 
 
 
+
+
     /*
    * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
    */
@@ -333,11 +340,21 @@ wait for serial 0 0
                     String data = (String) msg.obj;
                         mActivity.get().serialBuffer.append(data);
                         //checks for return carraige in serial data
-                        if(data.contains("\r"))
-                        {
-                            mActivity.get().statusTextview.setText(mActivity.get().serialBuffer.toString());
-//                            photonResponse(mActivity.get().toString());
-                            mActivity.get().serialBuffer.setLength(0);
+                    //player turn return
+
+                    if(mActivity.get().serialBuffer.toString().contains("\r")) {
+                            String serialCommand = mActivity.get().serialBuffer.toString();
+                            mActivity.get().statusTextview.setText(serialCommand);
+                            if (serialCommand.contains("0xC")) {
+                                mActivity.get().statusTextview.setText("Move Recieved from AI, your move!");
+                                mActivity.get().endTurnButton.setEnabled(true);
+                                mActivity.get().endGameButton.setEnabled(true);
+                                mActivity.get().countDownTimer.start();
+                                mActivity.get().logBuffer.append(serialCommand);
+
+
+                            }
+                        mActivity.get().serialBuffer.setLength(0);
                         }
                     break;
                 case UsbService.CTS_CHANGE:
@@ -348,25 +365,7 @@ wait for serial 0 0
                     break;
             }
         }
-        public void photonResponse(String s)
-        {
-            //TODO photon responses needed 1. AI turn complete 2. game over 3. move invalid
-            String[] split = s.split(" ");
-            //player turn return
-            if(Integer.getInteger(split[0]) > 15) {
-                mActivity.get().logBuffer.append(s + "\n");
-            }
 
-            else
-                switch (split[0]) {
-                    case("0x4"):
-                        mActivity.get().statusTextview.setText("Turn Received. Your move!") ;
-                        mActivity.get().endGameButton.setEnabled(true);
-                        mActivity.get().countDownTimer.start();
-
-                }
-
-        }
     }
 
 }
