@@ -1,6 +1,5 @@
 package com.example.kenbo.chess_gui;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -11,18 +10,26 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.Date;
 import java.util.Set;
 
 public class PlayerVsAI extends AppCompatActivity {
@@ -67,25 +74,30 @@ public class PlayerVsAI extends AppCompatActivity {
     private String serialOut;
     public StringBuilder serialBuffer = new StringBuilder();
     public StringBuilder logBuffer = new StringBuilder();
+
     Button endTurnButton;
     Button endGameButton;
     Button castleButton;
     Button captureButton;
+    Button logButton;
+    File logfile;
+    Boolean gameOver;
+    Button debugButton;
 
-/*
+    /*
 
-both capture and castle, add a button to say that first step is done (serial send)
-capture-
-remove opponent piece done ->
-(send serial) A c\n
-(wait for serial)0 0
-move your piece
-send serial 2\n
-wait for serial 0 0
-(boolean flags for both)
+    both capture and castle, add a button to say that first step is done (serial send)
+    capture-
+    remove opponent piece done ->
+    (send serial) A c\n
+    (wait for serial)0 0
+    move your piece
+    send serial 2\n
+    wait for serial 0 0
+    (boolean flags for both)
 
 
- */
+     */
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
@@ -101,6 +113,7 @@ wait for serial 0 0
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 //
 //        getWindow().getDecorView().setSystemUiVisibility(          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 //                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -108,6 +121,7 @@ wait for serial 0 0
 //                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 //                | View.SYSTEM_UI_FLAG_FULLSCREEN
 //                | View.SYSTEM_UI_FLAG_IMMERSIVE);
+        gameOver = false;
         mHandler = new MyHandler(this);
 
         //serial for create game
@@ -120,9 +134,10 @@ wait for serial 0 0
 
         endTurnButton = findViewById(R.id.endTurn);
         endGameButton = findViewById(R.id.endGameButton);
-        final Button logButton = findViewById(R.id.logButton);
+        logButton = findViewById(R.id.logButton);
         captureButton = findViewById(R.id.captureButton);
         castleButton = findViewById(R.id.castleButton);
+        debugButton = findViewById(R.id.debugButton);
 
         final Button startGameButton = findViewById(R.id.startButton);
 
@@ -130,6 +145,7 @@ wait for serial 0 0
         endGameButton.setEnabled(false);
         castleButton.setEnabled(false);
         captureButton.setEnabled(false);
+        debugButton.setVisibility(View.GONE);
 
         //begin game
         startGameButton.setOnClickListener(new View.OnClickListener() {
@@ -145,7 +161,7 @@ wait for serial 0 0
                 endTurnButton.setEnabled(true);
                 castleButton.setEnabled(true);
                 captureButton.setEnabled(true);
-                //setGui(true);
+                debugButton.setVisibility(View.VISIBLE);
 
             }
         });
@@ -163,10 +179,39 @@ wait for serial 0 0
                     public void onClick(DialogInterface dialog, int which) {
                         logDialog.hide();
                     }
+                });logDialog.show();
+                if(logBuffer.length() > 3000){
+                    logBuffer.delete(3000, logBuffer.length());
+                }
+
+
+            }
+        });
+
+        //debug button
+        debugButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(PlayerVsAI.this);
+                builder.setTitle("Debug Menu");
+                builder.setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.cancel();
+                            }
+                        });
+                builder.setItems(R.array.debug_menu, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int which) {
+                        if (which == 0) {
+                        endGameButton.setEnabled(true);
+                        endTurnButton.setEnabled(true);
+                        }
+
+                    }
                 });
-
-                logDialog.show();
-
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
         });
 
@@ -186,7 +231,6 @@ wait for serial 0 0
                 castleButton.setEnabled(true);
                 timer.setText("");
 
-
             }
 
         });
@@ -196,7 +240,10 @@ wait for serial 0 0
             @Override
             public void onClick(View v) {
                 if (usbService != null) {
-                    usbService.write("6\n\r".getBytes());
+                    if(gameOver == false) {
+                        usbService.write("6\n\r".getBytes());
+                        gameOver = true;
+                    }
                     finish();
                 }
                 //TODO write dialog for end game to reset pieces
@@ -223,11 +270,12 @@ wait for serial 0 0
 
         });
 
-        captureButton.setOnClickListener(new View.OnClickListener(){
+        //capture button
+        captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 final AlertDialog captureDialog = new AlertDialog.Builder(PlayerVsAI.this).create();
-                captureDialog.setMessage("Remove Opponent Piece, then press Next, then End Turn");
+                captureDialog.setMessage("Remove Opponent Piece, then press Next, move piece, then end turn");
                 captureDialog.setButton(captureDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -241,10 +289,10 @@ wait for serial 0 0
 
 
         //conter begin
-        countDownTimer = new CountDownTimer(30000, 1000) {
+        countDownTimer = new CountDownTimer(999000, 1000) {
             @Override
             public void onTick(long l) {
-                timer.setText(String.valueOf(l/1000));
+                timer.setText(String.valueOf(l / 1000));
             }
 
             @Override
@@ -252,26 +300,31 @@ wait for serial 0 0
                 timer.setText("Turn Over!");
                 endTurnButton.setEnabled(false);
                 endGameButton.setEnabled(false);
-                usbService.write("6\r\n".getBytes());
+                if(gameOver == false) {
+                    usbService.write("6\n\r".getBytes());
+                    gameOver = true;
+                }
                 statusTextview.setText("Game Over! Press the back button");
+
             }
         };
 
 
-
     }
 
-    public void showcastleDialog(){
+
+
+    public void showcastleDialog() {
         final AlertDialog castleDialog2 = new AlertDialog.Builder(PlayerVsAI.this).create();
         castleDialog2.setMessage("Now move Rook, and touch Submit Turn");
         castleDialog2.setButton(castleDialog2.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-            castleDialog2.hide();
-            final Button endTurnButton = findViewById(R.id.endTurn);
-            final Button endGameButton = findViewById(R.id.endGameButton);
-            endTurnButton.setEnabled(true);
-            endGameButton.setEnabled(true);
+                castleDialog2.hide();
+                final Button endTurnButton = findViewById(R.id.endTurn);
+                final Button endGameButton = findViewById(R.id.endGameButton);
+                endTurnButton.setEnabled(true);
+                endGameButton.setEnabled(true);
             }
         });
         castleDialog2.show();
@@ -279,13 +332,24 @@ wait for serial 0 0
 
 
     @Override
+    public void onBackPressed(){
+        countDownTimer.cancel();
+        if(gameOver == false) {
+            usbService.write("6\n\r".getBytes());
+            gameOver = true;
+        }
+        finish();
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         setFilters();  // Start listening notifications from UsbService
         startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
     }
+
     @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
         unregisterReceiver(mUsbReceiver);
         unbindService(usbConnection);
@@ -319,9 +383,6 @@ wait for serial 0 0
     }
 
 
-
-
-
     /*
    * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
    */
@@ -337,36 +398,42 @@ wait for serial 0 0
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
+
                     String data = (String) msg.obj;
-                        mActivity.get().serialBuffer.append(data);
-                        //checks for return carraige in serial data
+                    mActivity.get().serialBuffer.append(data);
+                    mActivity.get().statusTextview.setText(data);
+                    //checks for return carraige in serial data
                     //player turn return
+                    //mActivity.get().statusTextview.setText(data);
+                    // if contains \n, parse as separate command
+                    if(mActivity.get().serialBuffer.toString().contains("\n")) {
+                        mActivity.get().statusTextview.setText(mActivity.get().serialBuffer.toString());
+                        if (mActivity.get().serialBuffer.toString().startsWith("c"))
+                        {
+                            mActivity.get().statusTextview.setText("Move Recieved from AI, your move!");
+                            mActivity.get().endTurnButton.setEnabled(true);
+                            mActivity.get().endGameButton.setEnabled(true);
+                            mActivity.get().countDownTimer.start();
+                            //TODO clear buffer somewhere
 
-                    if(mActivity.get().serialBuffer.toString().contains("\r")) {
-                            String serialCommand = mActivity.get().serialBuffer.toString();
-                            mActivity.get().statusTextview.setText(serialCommand);
-                            if (serialCommand.contains("0xC")) {
-                                mActivity.get().statusTextview.setText("Move Recieved from AI, your move!");
-                                mActivity.get().endTurnButton.setEnabled(true);
-                                mActivity.get().endGameButton.setEnabled(true);
-                                mActivity.get().countDownTimer.start();
-                                mActivity.get().logBuffer.append(serialCommand);
-
-
-                            }
-                        mActivity.get().serialBuffer.setLength(0);
                         }
+                        mActivity.get().logBuffer.append(mActivity.get().serialBuffer.toString());
+                        mActivity.get().serialBuffer.setLength(0);
+                    }
+//                    mActivity.get().logBuffer.append(mActivity.get().serialBuffer.toString());
+
                     break;
                 case UsbService.CTS_CHANGE:
-                    Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
+                    Toast.makeText(mActivity.get(), "CTS_CHANGE", Toast.LENGTH_LONG).show();
                     break;
                 case UsbService.DSR_CHANGE:
-                    Toast.makeText(mActivity.get(), "DSR_CHANGE",Toast.LENGTH_LONG).show();
+                    Toast.makeText(mActivity.get(), "DSR_CHANGE", Toast.LENGTH_LONG).show();
                     break;
             }
         }
 
-    }
 
+
+    }
 }
     

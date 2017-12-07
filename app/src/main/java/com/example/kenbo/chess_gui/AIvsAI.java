@@ -63,13 +63,13 @@ public class AIvsAI extends AppCompatActivity {
     Button endTurn;
     Button logButton;
     Button endGameButton;
-
-    private UsbService usbService;
-    private TextView statusTextView;
-    private MyHandler mHandler;
-    private String serialOut;
-    private StringBuilder serialBuffer = new StringBuilder();
-    private StringBuilder logBuffer = new StringBuilder();
+    Boolean gameOver;
+    UsbService usbService;
+    TextView statusTextView;
+    MyHandler mHandler;
+    String serialOut;
+    StringBuilder serialBuffer = new StringBuilder();
+    StringBuilder logBuffer = new StringBuilder();
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
@@ -114,6 +114,20 @@ public class AIvsAI extends AppCompatActivity {
                     }
                 });
                 logDialog.show();
+            }
+        });
+        //endGameButton
+        endGameButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (usbService != null) {
+                    if(gameOver == false) {
+                        usbService.write("6\n\r".getBytes());
+                        gameOver = true;
+                    }
+                    finish();
+                }
+                //TODO write dialog for end game to reset pieces
             }
         });
     }
@@ -183,12 +197,22 @@ public class AIvsAI extends AppCompatActivity {
                     String data = (String) msg.obj;
                     mActivity.get().serialBuffer.append(data);
                     //checks for return carraige in serial data
-                    if(data.contains("\r"))
-                    {
-                        mActivity.get().statusTextView.setText(mActivity.get().serialBuffer.toString());
-                        mActivity.get().serialBuffer.setLength(0);
+                        //checks for return carraige in serial data
+                        //player turn return
 
-                    }
+                        if(mActivity.get().serialBuffer.toString().contains("\n")) {
+                            mActivity.get().statusTextView.setText(mActivity.get().serialBuffer.toString());
+                            if (mActivity.get().serialBuffer.toString().startsWith("c")) {
+                                mActivity.get().statusTextView.setText("Move Recieved from AI, your move!");
+                                mActivity.get().endGameButton.setEnabled(true);
+                                mActivity.get().endGameButton.setEnabled(true);
+                                mActivity.get().countDownTimer.start();
+                                //TODO clear buffer somewhere
+                            }
+                            mActivity.get().logBuffer.append(mActivity.get().serialBuffer.toString());
+                            mActivity.get().serialBuffer.setLength(0);
+                        }
+
                     break;
                 case UsbService.CTS_CHANGE:
                     Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
@@ -198,26 +222,7 @@ public class AIvsAI extends AppCompatActivity {
                     break;
             }
         }
-        public void photonResponse(String s)
-        {
-            //TODO photon responses needed 1. AI turn complete 2. game over 3. move invalid
-            String[] split = s.split(" ");
-                //player turn return
-            if(Integer.getInteger(split[0]) > 15) {
 
-                mActivity.get().logBuffer.append(s + "\n");
-            }
-
-            else
-                switch (split[0]) {
-                    case("0x4"):
-                        mActivity.get().statusTextView.setText("Turn Received. Your move!") ;
-                        mActivity.get().endGameButton.setEnabled(true);
-                        mActivity.get().countDownTimer.start();
-
-                }
-
-        }
     }
 
 }
