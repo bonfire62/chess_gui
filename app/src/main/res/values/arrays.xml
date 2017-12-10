@@ -3,8 +3,10 @@
     <string-array name="select_game">
         <item>Player vs. AI</item>
         <item>AI vs. AI</item>
+        <item>Player vs. Player</item>
     </string-array>
     <string-array name="debug_menu">
     <item>Reset Buttons</item>
+        <item>Retry Move</item>
     </string-array>
 </resources>

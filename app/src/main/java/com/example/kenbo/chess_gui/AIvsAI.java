@@ -15,10 +15,15 @@ import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.method.ScrollingMovementMethod;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.felhr.usbserial.usbserial.SerialBuffer;
 
 import java.lang.ref.WeakReference;
 import java.util.Set;
@@ -58,8 +63,6 @@ public class AIvsAI extends AppCompatActivity {
             }
         }
     };
-    TextView timer;
-    CountDownTimer countDownTimer;
     Button endTurn;
     Button logButton;
     Button endGameButton;
@@ -86,6 +89,7 @@ public class AIvsAI extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -94,13 +98,20 @@ public class AIvsAI extends AppCompatActivity {
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE);
 
+        mHandler = new MyHandler(AIvsAI.this);
+
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_aiai);
-        statusTextView = findViewById(R.id.statusText);
-        logButton = findViewById(R.id.logButton);
 
+        statusTextView = findViewById(R.id.statusText_aiai);
+        logButton = findViewById(R.id.logButton_aiai);
+        endGameButton = findViewById(R.id.endGameButton_aiai);
+        final Button startGameButton = findViewById(R.id.startButton_aiai);
+        statusTextView.setMovementMethod(new ScrollingMovementMethod());
 
+        endGameButton.setVisibility(View.GONE);
+        gameOver = false;
         //log button
         logButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -128,6 +139,19 @@ public class AIvsAI extends AppCompatActivity {
                     finish();
                 }
                 //TODO write dialog for end game to reset pieces
+            }
+        });
+
+        //startGameButton
+        startGameButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(usbService != null){
+                    usbService.write("1 a,a\n\r".getBytes());
+                    statusTextView.append("1 a,a");
+                    startGameButton.setVisibility(View.GONE);
+                    endGameButton.setVisibility(View.VISIBLE);
+                }
             }
         });
     }
@@ -201,16 +225,9 @@ public class AIvsAI extends AppCompatActivity {
                         //player turn return
 
                         if(mActivity.get().serialBuffer.toString().contains("\n")) {
-                            mActivity.get().statusTextView.setText(mActivity.get().serialBuffer.toString());
-                            if (mActivity.get().serialBuffer.toString().startsWith("c")) {
-                                mActivity.get().statusTextView.setText("Move Recieved from AI, your move!");
-                                mActivity.get().endGameButton.setEnabled(true);
-                                mActivity.get().endGameButton.setEnabled(true);
-                                mActivity.get().countDownTimer.start();
-                                //TODO clear buffer somewhere
-                            }
+                            mActivity.get().statusTextView.append(mActivity.get().serialBuffer.toString());
                             mActivity.get().logBuffer.append(mActivity.get().serialBuffer.toString());
-                            mActivity.get().serialBuffer.setLength(0);
+                            mActivity.get().serialBuffer = new StringBuilder();
                         }
 
                     break;

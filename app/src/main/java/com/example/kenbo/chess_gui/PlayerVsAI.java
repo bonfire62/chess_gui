@@ -72,7 +72,6 @@ public class PlayerVsAI extends AppCompatActivity {
     private TextView statusTextview;
     private MyHandler mHandler;
     private String serialOut;
-    public StringBuilder serialBuffer = new StringBuilder();
     public StringBuilder logBuffer = new StringBuilder();
 
     Button endTurnButton;
@@ -84,20 +83,6 @@ public class PlayerVsAI extends AppCompatActivity {
     Boolean gameOver;
     Button debugButton;
 
-    /*
-
-    both capture and castle, add a button to say that first step is done (serial send)
-    capture-
-    remove opponent piece done ->
-    (send serial) A c\n
-    (wait for serial)0 0
-    move your piece
-    send serial 2\n
-    wait for serial 0 0
-    (boolean flags for both)
-
-
-     */
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
@@ -155,7 +140,10 @@ public class PlayerVsAI extends AppCompatActivity {
                 startGameButton.setVisibility(View.GONE);
 
                 if (usbService != null) {
-                    usbService.write("1 h\n\r".getBytes());
+//                    if(getIntent().getStringExtra("gametype") == "pvai")
+                        usbService.write("1 h,a\n\r".getBytes());
+//                    else
+//                        usbService.write("1 h,h\n\r".getBytes());
                 }
                 endGameButton.setEnabled(true);
                 endTurnButton.setEnabled(true);
@@ -177,11 +165,13 @@ public class PlayerVsAI extends AppCompatActivity {
                 logDialog.setTitle("Log");
                 logDialog.setButton(Dialog.BUTTON_POSITIVE, "Hide", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+
                         logDialog.hide();
                     }
                 });logDialog.show();
-                if(logBuffer.length() > 3000){
-                    logBuffer.delete(3000, logBuffer.length());
+                if(logBuffer.length() > 8000){
+                    logBuffer.delete(0, 2000);
+                    logBuffer.trimToSize();
                 }
 
 
@@ -194,7 +184,7 @@ public class PlayerVsAI extends AppCompatActivity {
             public void onClick(View view) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(PlayerVsAI.this);
                 builder.setTitle("Debug Menu");
-                builder.setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                builder.setPositiveButton("Back", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 dialogInterface.cancel();
@@ -204,10 +194,30 @@ public class PlayerVsAI extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int which) {
                         if (which == 0) {
-                        endGameButton.setEnabled(true);
-                        endTurnButton.setEnabled(true);
+                            endGameButton.setEnabled(true);
+                            endTurnButton.setEnabled(true);
+                        } else if (which == 1) {
+                            final AlertDialog errorDialog = new AlertDialog.Builder(PlayerVsAI.this).create();
+                            errorDialog.setTitle("Error");
+                            errorDialog.setMessage("Move invalid, please reset pieces, and hit Next");
+                            errorDialog.setButton(errorDialog.BUTTON_NEGATIVE, "Back", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    errorDialog.hide();
+                                }
+                            });
+                            errorDialog.setButton(errorDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    errorDialog.hide();
+                                    usbService.write("8\n\r".getBytes());
+                                    endGameButton.setEnabled(true);
+                                    endTurnButton.setEnabled(true);
+                                    countDownTimer.start();
+                                }
+                            });
+                            errorDialog.show();
                         }
-
                     }
                 });
                 AlertDialog dialog = builder.create();
@@ -280,8 +290,8 @@ public class PlayerVsAI extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         usbService.write("A c\n\r".getBytes());
-                        //TODO write showcastleDialog
-                    }
+                        countDownTimer.start();
+                      }
                 });
                 captureDialog.show();
             }
@@ -289,7 +299,7 @@ public class PlayerVsAI extends AppCompatActivity {
 
 
         //conter begin
-        countDownTimer = new CountDownTimer(999000, 1000) {
+        countDownTimer = new CountDownTimer(45000, 1000) {
             @Override
             public void onTick(long l) {
                 timer.setText(String.valueOf(l / 1000));
@@ -311,8 +321,6 @@ public class PlayerVsAI extends AppCompatActivity {
 
 
     }
-
-
 
     public void showcastleDialog() {
         final AlertDialog castleDialog2 = new AlertDialog.Builder(PlayerVsAI.this).create();
@@ -338,6 +346,8 @@ public class PlayerVsAI extends AppCompatActivity {
             usbService.write("6\n\r".getBytes());
             gameOver = true;
         }
+//        unregisterReceiver(mUsbReceiver);
+//        unbindService(usbConnection);
         finish();
     }
 
@@ -392,7 +402,7 @@ public class PlayerVsAI extends AppCompatActivity {
         public MyHandler(PlayerVsAI activity) {
             mActivity = new WeakReference<>(activity);
         }
-
+        public StringBuilder serialBuffer = new StringBuilder();
 
         @Override
         public void handleMessage(Message msg) {
@@ -400,25 +410,51 @@ public class PlayerVsAI extends AppCompatActivity {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
 
                     String data = (String) msg.obj;
-                    mActivity.get().serialBuffer.append(data);
-                    mActivity.get().statusTextview.setText(data);
+                    serialBuffer.append(data);
                     //checks for return carraige in serial data
                     //player turn return
                     //mActivity.get().statusTextview.setText(data);
                     // if contains \n, parse as separate command
-                    if(mActivity.get().serialBuffer.toString().contains("\n")) {
-                        mActivity.get().statusTextview.setText(mActivity.get().serialBuffer.toString());
-                        if (mActivity.get().serialBuffer.toString().startsWith("c"))
+                    if(serialBuffer.toString().contains("\n")) {
+                        mActivity.get().statusTextview.setText(serialBuffer.toString());
+                        if (serialBuffer.toString().startsWith("c"))
                         {
                             mActivity.get().statusTextview.setText("Move Recieved from AI, your move!");
                             mActivity.get().endTurnButton.setEnabled(true);
                             mActivity.get().endGameButton.setEnabled(true);
                             mActivity.get().countDownTimer.start();
-                            //TODO clear buffer somewhere
 
                         }
-                        mActivity.get().logBuffer.append(mActivity.get().serialBuffer.toString());
-                        mActivity.get().serialBuffer.setLength(0);
+                        else if(serialBuffer.toString().startsWith("1"))
+                        {
+                            mActivity.get().statusTextview.setText("Error Dialogue");
+                            final AlertDialog errorDialog = new AlertDialog.Builder(mActivity.get()).create();
+                            errorDialog.setTitle("Error");
+                            errorDialog.setMessage("Move invalid, please reset pieces, and hit Next");
+                            errorDialog.setButton(errorDialog.BUTTON_POSITIVE, "Next", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    errorDialog.hide();
+                                    mActivity.get().usbService.write("8\n\r".getBytes());
+                                    mActivity.get().endGameButton.setEnabled(true);
+                                    mActivity.get().endTurnButton.setEnabled(true);
+                                    mActivity.get().countDownTimer.start();
+                                }
+                            });
+                            errorDialog.show();
+                        }
+                        else if(serialBuffer.toString().startsWith("2")){
+                            final AlertDialog gameOverDialog = new AlertDialog.Builder(mActivity.get()).create();
+                            gameOverDialog.setMessage("Game Over!!");
+                            gameOverDialog.setButton(gameOverDialog.BUTTON_POSITIVE, "I Lost", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    mActivity.get().finish();
+                                }
+                            });
+                        }
+                        mActivity.get().logBuffer.append(serialBuffer.toString());
+                        serialBuffer = new StringBuilder();
                     }
 //                    mActivity.get().logBuffer.append(mActivity.get().serialBuffer.toString());
 
@@ -431,9 +467,6 @@ public class PlayerVsAI extends AppCompatActivity {
                     break;
             }
         }
-
-
-
     }
 }
     

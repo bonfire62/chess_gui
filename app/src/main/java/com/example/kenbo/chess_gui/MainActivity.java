@@ -21,10 +21,12 @@ public class MainActivity extends AppCompatActivity {
     public UsbDeviceConnection connection;
     public Button beginNewGame;
     UsbSerialDevice serial;
+    String gametype;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().getDecorView().setSystemUiVisibility(          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -48,16 +50,25 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int which) {
                         if(which == 0)
-
                         {
                             Intent pVAiIntent = new Intent(MainActivity.this, PlayerVsAI.class);
+                            gametype = "pvai";
+                            pVAiIntent.putExtra("gametype", gametype);
                             startActivity(pVAiIntent);
 
                         }
-                        else
+                        else if(which == 1)
                         {
                             Intent aiVAiIntent = new Intent(MainActivity.this, AIvsAI.class);
+                            gametype = "aivai";
+                            aiVAiIntent.putExtra("gametype", gametype);
                             startActivity(aiVAiIntent);
+                        }
+                        else{
+                            Intent pVPIntent = new Intent(MainActivity.this, PlayerVsAI.class);
+                            pVPIntent.putExtra("gametype", gametype);
+                            gametype = "pvp";
+                            startActivity(pVPIntent);
                         }
 
 
